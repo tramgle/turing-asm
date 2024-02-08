@@ -44,7 +44,7 @@ class Parser:
 		return self.source[self.current]
 
 	def is_alpha(self, c):
-		return (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z')
+		return (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z') or c == '$' or (c >= '0' and c <= '9')
 
 	def idendifier(self):
 		global keywords
