@@ -1,0 +1,29 @@
+input: abbabba
+
+.start
+a $ R state2
+$ $ R state8
+b $ R state5
+.state2
+b b R state2
+a a R state2
+$ $ L state3
+.state3
+a $ L state4
+$ $ R state8
+.state4
+a a L state4
+b b L state4
+$ $ R start
+.state5
+a a R state5
+b b R state5
+$ $ L state6
+.state6
+b $ L state7
+$ $ R state8
+.state7
+a a L state7
+b b L state7
+$ $ R start
+.state8 HALT
