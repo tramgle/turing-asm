@@ -33,8 +33,9 @@ class Transition:
 		self.nextState = nextState
 
 class State:
-	def __init__(self, halt=False):
+	def __init__(self, halt=False, name=""):
 		self.HALT = halt
+		self.name = name
 		self.transitions = {}
 	def addTransition(self, t):
 		self.transitions[t.key] = t
@@ -43,12 +44,15 @@ class Program:
 	def __init__(self, states=None):
 		self.state = 0
 		self.states = states or []
+	def add_state(self, state):
+		self.states.append(state)
 	def advance(self, machine, cell):
 		if cell not in self.states[self.state].transitions:
 			machine.crash = True
 			return
 		t = self.states[self.state].transitions[cell]
-		print(self.state, t.nextState, cell)
+		if debug:
+			print(self.state, t.nextState, cell)
 		machine.write(t.write)
 		machine.move(t.action)
 		self.state = t.nextState
@@ -75,7 +79,7 @@ if __name__ == "__main__":
 	state5.addTransition(Transition('$', '$', 1, 5))
 	state6 = State(halt=True)
 	
-	tape = ""
+	tape = "aabb"
 	if len(sys.argv) > 1:
 		tape = sys.argv[1]
 	if len(sys.argv) > 2 and sys.argv[2] == '-d':

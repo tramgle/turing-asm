@@ -1,5 +1,5 @@
 import sys
-from machine import State, Transition, Program
+from machine import Machine, State, Transition, Program
 
 keywords = {
 	"L": "LEFT",
@@ -7,6 +7,8 @@ keywords = {
 	"input": "INPUT",
 	"HALT": "HALT"
 }
+
+debug = False
 
 class Token:
 	def __init__(self, t_type, t_value=None):
@@ -20,6 +22,11 @@ class Parser:
 		self.start = 0
 		self.current = 0
 		self.line = 1
+		self.cT = 0
+		self.states = []
+		self.lookup = {}
+		self.transitions = []
+		self.tape = ""
 
 	def is_at_end(self):
 		return self.current >= len(self.source)
@@ -76,6 +83,70 @@ class Parser:
 				else:
 					raise BaseException("Weird tokens man")
 
+	def match_ahead(self, t_type, n):
+		if self.cT + n > len(self.tokens):
+			return False
+		return self.tokens[self.cT+n].type == t_type
+	
+	def token_to_action(self, value):
+		if value == "RIGHT":
+			return 1
+		if value == "LEFT":
+			return -1
+
+	def parse(self):
+		self.cT = 0
+		state_index = 0
+		if len(self.tokens) == 0:
+			print("No Tokens Found")
+			return
+		while self.cT < len(self.tokens) and self.tokens[self.cT].type != "EOF":
+			#print(self.tokens[self.cT].type)
+			match self.tokens[self.cT].type:
+				case "EOF":
+					return
+				case "INPUT":
+					if self.match_ahead(":", 1) and self.match_ahead("IDENT", 2):
+						self.tape = self.tokens[self.cT+2].value
+						self.cT += 3
+					else:
+						raise BaseException("Expected Well Formed Input Define")
+				case ".":
+					if self.match_ahead("IDENT", 1):
+						name = self.tokens[self.cT+1].value
+						halts = False
+						self.cT += 1
+						if self.match_ahead("HALT", 1):
+							halts = True
+							self.cT += 2
+						self.states.append(State(halt=halts, name=name))
+						self.lookup[name] = state_index
+						state_index += 1
+				case "IDENT":
+					if self.match_ahead("IDENT", 1) and (self.match_ahead("LEFT",2) or self.match_ahead("RIGHT",2)) and self.match_ahead("IDENT",3):
+						if len(self.states) == 0:
+							raise BaseException("Transition declared before state")
+						transition = (state_index-1, self.tokens[self.cT].value, self.tokens[self.cT+1].value, self.token_to_action(self.tokens[self.cT+2].type), self.tokens[self.cT+3].value)
+						self.transitions.append(transition)
+						self.cT += 4
+					else:
+						raise BaseException("Malformed Transition")
+			self.cT += 1
+		for t in self.transitions:
+			if t[0] == -1:
+				raise BaseException("Transition declared before state")
+			self.states[t[0]].addTransition(Transition(t[1],t[2],t[3],self.lookup[t[4]]))
+		if debug:
+			for s in self.states:
+				print(s.name, s.HALT)
+				for ti in s.transitions:
+					t = s.transitions[ti]
+					print("\t", t.key, t.write, t.action, t.nextState)
+	def run(self):
+		prog = Program(self.states)
+		machine = Machine(prog, self.tape)
+		machine.run()
+
 if __name__ == "__main__":
 	filename = ""
 	if len(sys.argv) == 1:
@@ -89,5 +160,5 @@ if __name__ == "__main__":
 	
 	p = Parser(body)
 	p.scan_tokens()
-	for t in p.tokens:
-		print(t.type, t.value)
+	p.parse()
+	p.run()
