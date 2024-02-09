@@ -1,6 +1,7 @@
 # turing-asm
 An assembly, parser and runtime for right infinite Turing machine.
 
+Example Program
 ```
 input: abababab
 
@@ -48,3 +49,6 @@ $ $ R state6
 
 .state6 HALT
 ```
+
+# Usage
+`python parser.py palindrome.tasm`
